@@ -6,6 +6,7 @@ import { LetterInputData, Color } from './types/LetterInputData';
 import axios from 'axios';
 
 function App() {
+  //TODO: Generate all of them at once, then use an index to control how many to show
   const [rows, setRows] = useState<LetterInputData[][]>(() => [
     Array(5).fill(null).map(() => ({
       letter: "",
@@ -27,20 +28,41 @@ function App() {
   }
 
   const addRow = () => {
-    if (rows.length < 6) {
-      setRows([
-        ...rows,
-        Array(5).fill(null).map(() => ({
+    if (rows.length >= 6) { return; }
+
+    const lastRow = rows[rows.length - 1];
+    const newRow = Array(5).fill(null).map((_, index) => {
+      if (lastRow && lastRow[index].color === Color.GREEN) {
+        return {
+          letter: lastRow[index].letter,
+          color: Color.GREEN,
+        };
+      }
+      return {
+        letter: "",
+        color: Color.GREY,
+      };
+    });
+    setRows([...rows, newRow]);
+  };
+
+  const clearRow = () => {
+    const newRows = rows.map((row, index) =>
+      index === rows.length - 1 // Check if it's the last row
+        ? Array(5).fill(null).map(() => ({
           letter: "",
           color: Color.GREY,
         }))
-      ]);
-    }
+        : row
+    );
+    setRows(newRows);
   }
 
   const removeRow = () => {
-    const newRows = rows.slice(0, -1);
-    setRows(newRows);
+    if (rows.length > 1) {
+      const newRows = rows.slice(0, -1);
+      setRows(newRows);
+    }
   }
 
   const handleSolve = () => {
@@ -103,6 +125,11 @@ function App() {
           className="focus:outline-none text-white bg-red-700 hover:bg-red-800 font-bold rounded-lg text-lg px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
           onClick={removeRow}>
           Delete row
+        </button>
+        <button
+          className="text-white bg-yellow-700 hover:bg-yellow-800 font-bold text-lg rounded-lg px-5 py-2.5 me-2 mb-2 dark:bg-yellow-600 dark:hover:bg-yellow-700 focus:outline-none dark:focus:ring-yellow-800"
+          onClick={clearRow}>
+          Reset row
         </button>
         <button
           className="text-white bg-blue-700 hover:bg-blue-800 font-bold text-lg rounded-lg px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"

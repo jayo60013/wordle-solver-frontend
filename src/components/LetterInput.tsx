@@ -12,7 +12,7 @@ const LetterInput = ({
   const styleVariants = {
     [Color.GREY]: styles.concat(" bg-neutral-500"),
     [Color.YELLOW]: styles.concat(" bg-yellow-500"),
-    [Color.GREEN]: styles.concat(" bg-green-500"),
+    [Color.GREEN]: styles.concat(" bg-lime-600"),
   }
 
   return (
