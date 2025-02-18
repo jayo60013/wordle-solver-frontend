@@ -4,6 +4,8 @@ import InputRow from './components/InputRow'
 import ColorSelector from './components/ColorSelector';
 import { LetterInputData, Color } from './types/LetterInputData';
 import axios from 'axios';
+import { WordResponseData } from './types/WordResponseData';
+import PossibleWord from './components/PossibleWord';
 
 function App() {
   //TODO: Generate all of them at once, then use an index to control how many to show
@@ -14,8 +16,9 @@ function App() {
     }))
   ]);
   const [currentColor, setColor] = useState<Color>(Color.GREY);
-  const [possibleWords, setPossibleWords] = useState<string[]>([]);
+  const [possibleWords, setPossibleWords] = useState<WordResponseData[]>([]);
   const [possibleWordCount, setPossibleWordCount] = useState<number>(-1);
+  const [totalWordCount, setTotalWordCount] = useState<number>(-1);
 
   const handleRowChange = (rowIdx: number, newRow: LetterInputData[]) => {
     const updatedRow = [...rows];
@@ -25,6 +28,25 @@ function App() {
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setColor(e.target.value as Color)
+  }
+
+  const handleWordClick = (word: string) => {
+    if (rows.length >= 6) { return; }
+
+    const lastRow = rows[rows.length - 1];
+    const newRow = word.split("").map((ch, index) => {
+      if (lastRow && lastRow[index].color === Color.GREEN) {
+        return {
+          letter: lastRow[index].letter,
+          color: Color.GREEN,
+        };
+      }
+      return {
+        letter: ch,
+        color: Color.GREY,
+      };
+    });
+    setRows([...rows, newRow]);
   }
 
   const addRow = () => {
@@ -99,17 +121,20 @@ function App() {
     }, [] as [string, number][]
     );
 
-    // if (greyLetters.length === 0 && yellowLetters.length === 0 && greenLetters.length === 0)
+    if (greyLetters.length === 0 && yellowLetters.length === 0 && greenLetters.length === 0) {
+      return;
+    }
 
     axios.post("http://localhost:5307/possible-words", {
       grey_letters: greyLetters,
       yellow_letters: yellowLetters,
       green_letters: greenLetters
-    }).then(function (response) {
-      console.log(response);
+    }).then(function(response) {
+      console.log(response.data);
       setPossibleWords(response.data.word_list);
       setPossibleWordCount(response.data.number_of_words);
-    }).catch(function (error) {
+      setTotalWordCount(response.data.total_number_of_words);
+    }).catch(function(error) {
       console.log(error);
     });
   }
@@ -124,7 +149,7 @@ function App() {
         <button
           className="focus:outline-none text-white bg-red-700 hover:bg-red-800 font-bold rounded-lg text-lg px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900"
           onClick={removeRow}>
-          Delete row
+          Remove row
         </button>
         <button
           className="text-white bg-yellow-700 hover:bg-yellow-800 font-bold text-lg rounded-lg px-5 py-2.5 me-2 mb-2 dark:bg-yellow-600 dark:hover:bg-yellow-700 focus:outline-none dark:focus:ring-yellow-800"
@@ -146,12 +171,10 @@ function App() {
         Solve
       </button>
 
-      {possibleWordCount !== -1 && <p>Total possible words: {possibleWordCount}</p>}
+      {possibleWordCount !== -1 && <p>Total possible words: {possibleWordCount} ({Math.ceil(possibleWordCount / totalWordCount * 100)}%)</p>}
       <div>
         {possibleWords.map((value, i) => (
-          <span key={i} className="inline-block m-1">
-            {value},
-          </span>
+          <PossibleWord key={i} wordResponse={value} handleWordClick={handleWordClick} />
         ))}
       </div>
     </div>
