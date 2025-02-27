@@ -1,4 +1,5 @@
 export type WordResponseData = {
   word: string,
-  entropy: number
+  entropy: number,
+  is_answer: boolean,
 }

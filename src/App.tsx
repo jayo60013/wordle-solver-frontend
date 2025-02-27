@@ -6,6 +6,7 @@ import { LetterInputData, Color } from './types/LetterInputData';
 import axios from 'axios';
 import { WordResponseData } from './types/WordResponseData';
 import PossibleWord from './components/PossibleWord';
+import { Guess } from './types/Guess';
 
 function App() {
   //TODO: Generate all of them at once, then use an index to control how many to show
@@ -88,55 +89,26 @@ function App() {
   }
 
   const handleSolve = () => {
-    const greyLetters: string[] = rows
-      .flat()
-      .reduce((acc: string[], curr: LetterInputData) => {
-        if (curr.color === Color.GREY && curr.letter !== "") {
-          acc.push(curr.letter);
-        }
-        return acc;
-      }, [] as string[]);
-
-    const yellowLetters = rows.reduce((acc, row) => {
-      const positionsFromRow = row.reduce((acc2: [string, number][], curr2: LetterInputData, i: number) => {
-        if (curr2.color === Color.YELLOW && curr2.letter !== "") {
-          acc2.push([curr2.letter, i]);
-        }
-        return acc2;
-      }, [] as [string, number][]);
-      acc.push(...positionsFromRow);
-      return acc;
-    }, [] as [string, number][]
+    const payload: Guess[] = rows.flatMap((row, i): Guess[] =>
+      row
+        .map((cell, j): Guess => ({
+          turn: i,
+          letter: cell.letter,
+          position: j,
+          color: cell.color.charAt(0).toUpperCase() + cell.color.slice(1),
+        }))
+        .filter(guess => guess.letter !== "")
     );
-
-    const greenLetters = rows.reduce((acc, row) => {
-      const positionsFromRow = row.reduce((acc2: [string, number][], curr2: LetterInputData, i: number) => {
-        if (curr2.color === Color.GREEN && curr2.letter !== "") {
-          acc2.push([curr2.letter, i]);
-        }
-        return acc2;
-      }, [] as [string, number][]);
-      acc.push(...positionsFromRow);
-      return acc;
-    }, [] as [string, number][]
-    );
-
-    if (greyLetters.length === 0 && yellowLetters.length === 0 && greenLetters.length === 0) {
-      return;
-    }
-
-    axios.post("http://localhost:5307/possible-words", {
-      grey_letters: greyLetters,
-      yellow_letters: yellowLetters,
-      green_letters: greenLetters
-    }).then(function(response) {
-      console.log(response.data);
-      setPossibleWords(response.data.word_list);
-      setPossibleWordCount(response.data.number_of_words);
-      setTotalWordCount(response.data.total_number_of_words);
-    }).catch(function(error) {
-      console.log(error);
-    });
+    console.log(payload);
+    axios.post("http://localhost:5307/possible-words", payload)
+      .then(function(response) {
+        console.log(response.data);
+        setPossibleWords(response.data.word_list);
+        setPossibleWordCount(response.data.number_of_words);
+        setTotalWordCount(response.data.total_number_of_words);
+      }).catch(function(error) {
+        console.log(error);
+      });
   }
 
   return (

@@ -9,9 +9,9 @@ const PossibleWord = ({
 }) => {
   const styles = "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset border p-1 m-1 transform hover:scale-125 ";
   const getStyle = (entropy: number): string => {
-    if (entropy < 0.2) {
+    if (entropy > 5.0) {
       return styles.concat("bg-green-50 text-green-600 ring-green-500/10")
-    } else if (entropy < 0.3) {
+    } else if (entropy > 3.0) {
       return styles.concat("bg-yellow-50 text-yellow-600 ring-yellow-500/10")
     }
     return styles.concat("bg-red-50 text-red-600 ring-red-500/10")
@@ -21,7 +21,7 @@ const PossibleWord = ({
     <span
       className={`${getStyle(wordResponse.entropy)}`}
       onClick={() => handleWordClick(wordResponse.word)}>
-      {wordResponse.word}
+      {wordResponse.is_answer ? "⭐" : ""} {wordResponse.word}
     </span>
   );
 }
