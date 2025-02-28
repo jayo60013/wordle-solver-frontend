@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { createRef, useEffect, useRef, useState } from 'react'
 import './App.css'
 import InputRow from './components/InputRow'
-import ColorSelector from './components/ColorSelector';
 import { LetterInputData, Color } from './types/LetterInputData';
 import axios from 'axios';
 import { WordResponseData } from './types/WordResponseData';
@@ -9,26 +8,48 @@ import PossibleWord from './components/PossibleWord';
 import { Guess } from './types/Guess';
 
 function App() {
-  //TODO: Generate all of them at once, then use an index to control how many to show
-  const [rows, setRows] = useState<LetterInputData[][]>(() => [
-    Array(5).fill(null).map(() => ({
-      letter: "",
-      color: Color.GREY,
-    }))
-  ]);
-  const [currentColor, setColor] = useState<Color>(Color.GREY);
+  const [rows, setRows] = useState<LetterInputData[][]>(() =>
+    Array(6)
+      .fill(null)
+      .map(() =>
+        Array(5).fill(null).map(() => ({
+          letter: "",
+          color: Color.GREY,
+        }))
+      )
+  );
+  const inputRefs = useRef(
+    rows.map(() => Array(5).fill(null).map(() => createRef<HTMLInputElement>()))
+  );
+
+  const [cursorIdx, setCursorIdx] = useState<number>(0);
+  const [lastRowIdx, setLastRowIdx] = useState<number>(1);
   const [possibleWords, setPossibleWords] = useState<WordResponseData[]>([]);
   const [possibleWordCount, setPossibleWordCount] = useState<number>(-1);
   const [totalWordCount, setTotalWordCount] = useState<number>(-1);
 
   const handleRowChange = (rowIdx: number, newRow: LetterInputData[]) => {
-    const updatedRow = [...rows];
-    updatedRow[rowIdx] = newRow;
-    setRows(updatedRow);
-  }
+    const updatedRows = [...rows];
+    updatedRows[rowIdx] = newRow;
 
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setColor(e.target.value as Color)
+    const greens = newRow
+      .reduce<number[]>((acc, letterInputData, i) => {
+        if (letterInputData.color === Color.GREEN) {
+          acc.push(i)
+        }
+        return acc;
+      }, []);
+    for (let i = rowIdx + 1; i < 6; i++) {
+      greens.forEach((position) => {
+        updatedRows[i][position].color = Color.GREEN;
+        updatedRows[i][position].letter = newRow[position].letter;
+      })
+    }
+
+    setRows(updatedRows);
+
+    inputRefs.current[rowIdx][cursorIdx + 1]?.current?.focus();
+    setCursorIdx((prev) => prev + 1);
   }
 
   const handleWordClick = (word: string) => {
@@ -51,27 +72,14 @@ function App() {
   }
 
   const addRow = () => {
-    if (rows.length >= 6) { return; }
-
-    const lastRow = rows[rows.length - 1];
-    const newRow = Array(5).fill(null).map((_, index) => {
-      if (lastRow && lastRow[index].color === Color.GREEN) {
-        return {
-          letter: lastRow[index].letter,
-          color: Color.GREEN,
-        };
-      }
-      return {
-        letter: "",
-        color: Color.GREY,
-      };
-    });
-    setRows([...rows, newRow]);
+    if (lastRowIdx > 6) { return; }
+    setLastRowIdx((prev) => prev + 1);
+    setCursorIdx(0);
   };
 
   const clearRow = () => {
     const newRows = rows.map((row, index) =>
-      index === rows.length - 1 // Check if it's the last row
+      index === lastRowIdx - 1
         ? Array(5).fill(null).map(() => ({
           letter: "",
           color: Color.GREY,
@@ -79,12 +87,13 @@ function App() {
         : row
     );
     setRows(newRows);
+    setCursorIdx(0);
   }
 
   const removeRow = () => {
-    if (rows.length > 1) {
-      const newRows = rows.slice(0, -1);
-      setRows(newRows);
+    if (lastRowIdx > 1) {
+      setLastRowIdx((prev) => prev - 1);
+      setCursorIdx(0);
     }
   }
 
@@ -98,9 +107,10 @@ function App() {
           color: cell.color.charAt(0).toUpperCase() + cell.color.slice(1),
         }))
         .filter(guess => guess.letter !== "")
+        .filter(guess => guess.turn < lastRowIdx)
     );
     console.log(payload);
-    axios.post("http://localhost:5307/possible-words", payload)
+    axios.post("https://wordlesolverapi.umbra.cyou/possible-words", payload)
       .then(function(response) {
         console.log(response.data);
         setPossibleWords(response.data.word_list);
@@ -111,11 +121,21 @@ function App() {
       });
   }
 
+  useEffect(() => {
+    inputRefs.current[lastRowIdx - 1][0]?.current?.focus();
+  }, [lastRowIdx]);
+
   return (
     <div className="flex flex-col items-center">
       <h1 className="text-5xl">Wordle Solver</h1>
       {rows.map((row, index) => (
-        <InputRow key={index} row={row} color={currentColor} rowIdx={index} onRowChange={handleRowChange} />
+        index < lastRowIdx ? (<InputRow
+          key={index}
+          row={row}
+          rowIdx={index}
+          rowRef={inputRefs.current[index]}
+          onRowChange={handleRowChange}
+        />) : null
       ))}
       <div className="mt-4 ">
         <button
@@ -134,8 +154,6 @@ function App() {
           Add new row
         </button>
       </div>
-
-      <ColorSelector color={currentColor} handleColorChange={handleColorChange} />
 
       <button
         className="mt-4 focus:outline-none text-white bg-green-700 hover:bg-green-800 font-bold text-xl rounded-lg px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"

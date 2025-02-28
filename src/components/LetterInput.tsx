@@ -1,11 +1,14 @@
+import { Ref } from "react";
 import { LetterInputData, Color } from "../types/LetterInputData";
 
 const LetterInput = ({
-  index, value, onLetterChange
+  index, value, ref, onLetterChange, onLetterClick
 }: {
   index: number,
   value: LetterInputData,
-  onLetterChange: (index: number, newValue: string) => void
+  ref: Ref<HTMLInputElement>,
+  onLetterChange: (index: number, newValue: string) => void,
+  onLetterClick: (index: number, color: Color) => void,
 }) => {
 
   const styles = "w-15 h-15 text-4xl text-white font-bold text-renter capitalize focus:outline-none focus:ring-0 focus:border-transparent text-center"
@@ -22,7 +25,9 @@ const LetterInput = ({
         key={index}
         type="text"
         value={value.letter}
+        ref={ref}
         onChange={(e) => onLetterChange(index, e.target.value)}
+        onClick={(_) => onLetterClick(index, value.color)}
       />
     </>
   )
