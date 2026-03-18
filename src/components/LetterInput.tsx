@@ -1,35 +1,49 @@
-import { Ref } from "react";
+import { RefObject } from "react";
 import { LetterInputData, Color } from "../types/LetterInputData";
 
 const LetterInput = ({
-  index, value, ref, onLetterChange, onLetterClick
+  index, value, ref, onLetterChange, onLetterClick, onLetterKeyDown
 }: {
   index: number,
   value: LetterInputData,
-  ref: Ref<HTMLInputElement>,
+  ref: RefObject<HTMLInputElement | null>,
   onLetterChange: (index: number, newValue: string) => void,
   onLetterClick: (index: number, color: Color) => void,
+  onLetterKeyDown: (index: number, key: string) => void,
 }) => {
 
-  const styles = "w-15 h-15 text-4xl text-white font-bold text-renter capitalize focus:outline-none focus:ring-0 focus:border-transparent text-center"
+  const styles = "h-14 w-14 select-none border-2 text-center text-2xl font-bold uppercase caret-transparent transition-colors focus:outline-none"
   const styleVariants = {
-    [Color.GREY]: styles.concat(" bg-neutral-500"),
-    [Color.YELLOW]: styles.concat(" bg-yellow-500"),
-    [Color.GREEN]: styles.concat(" bg-lime-600"),
+    [Color.GREY]: styles.concat(" border-[#787c7e] bg-[#787c7e] text-white"),
+    [Color.YELLOW]: styles.concat(" border-[#c9b458] bg-[#c9b458] text-white"),
+    [Color.GREEN]: styles.concat(" border-[#6aaa64] bg-[#6aaa64] text-white"),
   }
 
+  const emptyTileStyle = styles.concat(" border-[#d3d6da] bg-white text-[#1a1a1b]")
+  const tileClassName = value.letter === "" ? emptyTileStyle : styleVariants[value.color]
+
   return (
-    <>
-      <input
-        className={`${styleVariants[value.color]}`}
-        key={index}
-        type="text"
-        value={value.letter}
-        ref={ref}
-        onChange={(e) => onLetterChange(index, e.target.value)}
-        onClick={(_) => onLetterClick(index, value.color)}
-      />
-    </>
+    <input
+      className={tileClassName}
+      key={index}
+      type="text"
+      value={value.letter}
+      maxLength={1}
+      autoComplete="off"
+      autoCorrect="off"
+      spellCheck={false}
+      ref={ref}
+      aria-label={`Letter ${index + 1}`}
+      onChange={(e) => onLetterChange(index, e.target.value)}
+      onMouseDown={(e) => {
+        if (e.detail > 1) {
+          e.preventDefault();
+        }
+      }}
+      onDoubleClick={(e) => e.preventDefault()}
+      onClick={() => onLetterClick(index, value.color)}
+      onKeyDown={(e) => onLetterKeyDown(index, e.key)}
+    />
   )
 }
 

@@ -7,22 +7,24 @@ const PossibleWord = ({
   wordResponse: WordResponseData
   handleWordClick: (word: string) => void,
 }) => {
-  const styles = "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset border p-1 m-1 transform hover:scale-125 ";
+  const styles = "m-1 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-sm";
   const getStyle = (entropy: number): string => {
-    if (entropy > 5.0) {
-      return styles.concat("bg-green-50 text-green-600 ring-green-500/10")
-    } else if (entropy > 3.0) {
-      return styles.concat("bg-yellow-50 text-yellow-600 ring-yellow-500/10")
+    if (entropy > 5) {
+      return styles.concat(" border-[#d6ead5] bg-[#edf7ec] text-[#2f6b2c]")
+    } else if (entropy > 3) {
+      return styles.concat(" border-[#efe2be] bg-[#fff7e0] text-[#8a6d1f]")
     }
-    return styles.concat("bg-red-50 text-red-600 ring-red-500/10")
+    return styles.concat(" border-[#f0d0d0] bg-[#fff0f0] text-[#8f3a3a]")
   }
 
   return (
-    <span
+    <button
+      type="button"
       className={`${getStyle(wordResponse.entropy)}`}
       onClick={() => handleWordClick(wordResponse.word)}>
-      {wordResponse.is_answer ? "⭐" : ""} {wordResponse.word}
-    </span>
+      <span>{wordResponse.is_answer ? "⭐" : ""} {wordResponse.word.toUpperCase()}</span>
+      <span className="text-xs opacity-75">H {wordResponse.entropy.toFixed(2)}</span>
+    </button>
   );
 }
 
