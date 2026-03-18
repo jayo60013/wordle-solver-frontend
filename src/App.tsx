@@ -141,7 +141,7 @@ function App() {
         setIsSolving(true);
 
         try {
-            const response = await axios.post("http://localhost:5307/possible-words", payload);
+            const response = await axios.post("https://api.wordlesolver.umbra.mom/possible-words", payload);
             setPossibleWords(response.data.word_list);
             setPossibleWordCount(response.data.number_of_words);
             setTotalWordCount(response.data.total_number_of_words);
@@ -150,7 +150,7 @@ function App() {
                 ? (typeof error.response?.data?.error === "string" ? error.response.data.error : "")
                 : "";
 
-            setApiError(apiMessage || "Could not reach the solver API at http://localhost:5307.");
+            setApiError(apiMessage || "Could not reach the solver API");
         } finally {
             setIsSolving(false);
         }
