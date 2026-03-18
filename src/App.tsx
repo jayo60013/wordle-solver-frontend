@@ -141,7 +141,7 @@ function App() {
         setIsSolving(true);
 
         try {
-            const response = await axios.post("https://api.wordlesolver.umbra.mom/possible-words", payload);
+            const response = await axios.post("https://wordlesolverapi.umbra.mom/possible-words", payload);
             setPossibleWords(response.data.word_list);
             setPossibleWordCount(response.data.number_of_words);
             setTotalWordCount(response.data.total_number_of_words);
