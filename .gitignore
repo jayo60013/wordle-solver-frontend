@@ -37,3 +37,4 @@ vite.config.ts.timestamp*
 .env.local
 .env.*.local
 
+.DS_Store
