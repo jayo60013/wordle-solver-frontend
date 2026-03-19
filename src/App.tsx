@@ -16,6 +16,14 @@ const createEmptyRow = (): LetterInputData[] =>
         color: Color.GREY,
     }));
 
+type SolverResponse = {
+    word_list: WordResponseData[];
+    number_of_words: number;
+    total_number_of_words: number;
+    lowest_entropy: number;
+    highest_entropy: number;
+};
+
 function App() {
     const [rows, setRows] = useState<LetterInputData[][]>(() =>
         Array.from({ length: ROW_COUNT }, () => createEmptyRow())
@@ -142,10 +150,12 @@ function App() {
         setIsSolving(true);
 
         try {
-            const response = await axios.post("https://wordlesolverapi.umbra.mom/possible-words", payload);
-            setPossibleWords(response.data.word_list);
-            setPossibleWordCount(response.data.number_of_words);
-            setTotalWordCount(response.data.total_number_of_words);
+            const response = await axios.post<SolverResponse>("https://wordlesolverapi.umbra.mom/possible-words", payload);
+            const responseData = response.data;
+
+            setPossibleWords(responseData.word_list ?? []);
+            setPossibleWordCount(responseData.number_of_words ?? 0);
+            setTotalWordCount(responseData.total_number_of_words ?? 0);
         } catch (error: unknown) {
             const apiMessage = axios.isAxiosError<{ error: string }>(error)
                 ? (error.response?.data?.error ?? "")
@@ -172,6 +182,15 @@ function App() {
         ? possibleWords.filter((word) => word.is_answer)
         : possibleWords;
     const hasSuggestions = filteredPossibleWords.length > 0;
+    const hasSolved = possibleWordCount !== -1;
+    const hasNoApiMatches = hasSolved && possibleWords.length === 0;
+    const emptySuggestionsMessage = isSolving
+        ? "Loading suggestions..."
+        : hasNoApiMatches
+            ? "No words fit that criteria."
+            : showOnlyAnswers
+                ? "No answer-only suggestions in this result set."
+                : "No suggestions yet. Press Solve to fetch candidates.";
 
     return (
         <div className="min-h-screen bg-[#f6f7f8] px-4 py-8 text-[#1a1a1b]">
@@ -256,7 +275,7 @@ function App() {
                             </div>
                         ) : possibleWordCount !== -1 && (
                             <p className="text-sm text-[#787c7e]">
-                                {possibleWordCount} / {totalWordCount} ({Math.ceil((possibleWordCount / totalWordCount) * 100)}%)
+                                {possibleWordCount} / {totalWordCount} ({(totalWordCount !== 0) ? Math.ceil((possibleWordCount / totalWordCount) * 100) : 0}%)
                             </p>
                         )}
                     </div>
@@ -264,11 +283,7 @@ function App() {
                         <div className={`max-h-64 overflow-y-auto transition-opacity ${isSolving ? "pointer-events-none opacity-50" : ""}`}>
                             {!hasSuggestions ? (
                                 <p className="text-sm text-[#787c7e]">
-                                    {isSolving
-                                        ? "Loading suggestions..."
-                                        : (showOnlyAnswers
-                                            ? "No answer-only suggestions in this result set."
-                                            : "No suggestions yet. Press Solve to fetch candidates.")}
+                                    {emptySuggestionsMessage}
                                 </p>
                             ) : (
                                 filteredPossibleWords.map((value) => (
