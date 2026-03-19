@@ -147,8 +147,8 @@ function App() {
             setPossibleWordCount(response.data.number_of_words);
             setTotalWordCount(response.data.total_number_of_words);
         } catch (error: unknown) {
-            const apiMessage = axios.isAxiosError(error)
-                ? (typeof error.response?.data?.error === "string" ? error.response.data.error : "")
+            const apiMessage = axios.isAxiosError<{ error: string }>(error)
+                ? (error.response?.data?.error ?? "")
                 : "";
 
             setApiError(apiMessage || "Could not reach the solver API");
