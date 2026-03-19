@@ -60,22 +60,25 @@ function App() {
     }
 
     const handleWordClick = (word: string) => {
-        if (lastRowIdx >= ROW_COUNT) {
+        const activeRowIdx = lastRowIdx - 1;
+        if (activeRowIdx < 0 || activeRowIdx >= ROW_COUNT) { return; }
+
+        const activeRow = rows[activeRowIdx];
+        const shouldCreateNewRow = activeRow.every((cell) => cell.letter !== "");
+        const targetRowIdx = shouldCreateNewRow ? activeRowIdx + 1 : activeRowIdx;
+
+        if (targetRowIdx >= ROW_COUNT) {
             setApiError("No empty rows left. Remove or reset a row to add another guess.");
             return;
         }
 
-        const sourceRowIdx = lastRowIdx - 1;
-        const targetRowIdx = lastRowIdx;
-        if (sourceRowIdx < 0 || targetRowIdx >= ROW_COUNT) { return; }
-
         setApiError("");
 
-        const previousRow = rows[sourceRowIdx];
+        const rowForGreenCarry = shouldCreateNewRow ? activeRow : rows[targetRowIdx];
         const seededRow = word.slice(0, WORD_LENGTH).split("").map((ch, index) => {
-            if (previousRow?.[index].color === Color.GREEN) {
+            if (rowForGreenCarry?.[index].color === Color.GREEN) {
                 return {
-                    letter: previousRow[index].letter,
+                    letter: rowForGreenCarry[index].letter,
                     color: Color.GREEN,
                 };
             }
@@ -92,7 +95,10 @@ function App() {
         const updatedRows = rows.map((row) => row.map((cell) => ({ ...cell })));
         updatedRows[targetRowIdx] = seededRow;
         setRows(updatedRows);
-        setLastRowIdx((prev) => Math.min(prev + 1, ROW_COUNT));
+
+        if (shouldCreateNewRow) {
+            setLastRowIdx((prev) => Math.min(prev + 1, ROW_COUNT));
+        }
 
         const firstEmptyIdx = seededRow.findIndex((cell) => cell.letter === "");
         const focusIdx = firstEmptyIdx === -1 ? WORD_LENGTH - 1 : firstEmptyIdx;
@@ -132,11 +138,6 @@ function App() {
                 .filter(guess => guess.letter !== "")
         );
 
-        if (payload.length === 0) {
-            setApiError("Add at least one letter before solving.");
-            return;
-        }
-
         setApiError("");
         setIsSolving(true);
 
@@ -163,7 +164,6 @@ function App() {
     const canAddRow = lastRowIdx < ROW_COUNT;
     const canRemoveRow = lastRowIdx > 1;
     const visibleRows = rows.slice(0, lastRowIdx);
-    const hasAnyInput = visibleRows.some((row) => row.some((cell) => cell.letter !== ""));
     const hasIncompleteWord = visibleRows.some((row) => {
         const lettersInRow = row.filter((cell) => cell.letter !== "").length;
         return lettersInRow > 0 && lettersInRow < WORD_LENGTH;
@@ -218,7 +218,7 @@ function App() {
                     <button
                         className="rounded-md bg-[#6aaa64] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#5c9557] disabled:cursor-not-allowed disabled:bg-[#9db59a]"
                         onClick={handleSolve}
-                        disabled={!hasAnyInput || hasIncompleteWord || isSolving}>
+                        disabled={hasIncompleteWord || isSolving}>
                         {isSolving ? "Solving..." : "Solve"}
                     </button>
                 </div>
