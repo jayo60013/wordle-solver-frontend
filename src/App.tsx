@@ -6,6 +6,7 @@ import axios from 'axios';
 import { WordResponseData } from './types/WordResponseData';
 import PossibleWord from './components/PossibleWord';
 import { Guess } from './types/Guess';
+import { ProblemDetails } from './types/ProblemDetails';
 
 const ROW_COUNT = 6;
 const WORD_LENGTH = 5;
@@ -157,11 +158,11 @@ function App() {
             setPossibleWordCount(responseData.number_of_words ?? 0);
             setTotalWordCount(responseData.total_number_of_words ?? 0);
         } catch (error: unknown) {
-            const apiMessage = axios.isAxiosError<{ error: string }>(error)
-                ? (error.response?.data?.error ?? "")
-                : "";
+            const problem = axios.isAxiosError<ProblemDetails>(error)
+                ? error.response?.data
+                : undefined;
 
-            setApiError(apiMessage || "Could not reach the solver API");
+            setApiError(problem?.detail ?? "Unable to reach solver API");
         } finally {
             setIsSolving(false);
         }
